@@ -1,7 +1,7 @@
+const express = require('express');
 const mysql = require('mysql2');
 const inputCheck = require('./utils/inputCheck');
-const express = require('express');
-const res = require('./node_modules/express/lib/response');
+
 const PORT = process.env.PORT || 3001;
 const app = express();
 
@@ -20,26 +20,21 @@ const db = mysql.createConnection(
     console.log('Connected to the election database.')
 );
 
-// Default response for any other request (Not Found)
-app.use((req, res) => {
-    res.status(404).end();
-});
-
 // Get all candidates
-// app.get('/api/candidates', (req, res) => {
-//     const sql = `SELECT * FROM candidates`;
+app.get('/api/candidates', (req, res) => {
+    const sql = `SELECT * FROM candidates`;
 
-//     db.query(sql, (err, row) => {
-//         if (err) {
-//             res.status(500).json({ error: err.message });
-//             return;
-//         }
-//         res.json({ 
-//             message: 'success',
-//             data: rows
-//         });
-//     });
-// });
+    db.query(sql, (err, row) => {
+        if (err) {
+            res.status(500).json({ error: err.message });
+            return;
+        }
+        res.json({ 
+            message: 'success',
+            data: row
+        });
+    });
+});
 
 // Gets one candidates
 app.get('/api/candidates/:id', (req, res) => {
@@ -62,6 +57,7 @@ app.get('/api/candidates/:id', (req, res) => {
 app.delete('/api/candidate/:id', (req, res) => {
     const sql = `DELETE FROM candidates WHERE id = ?`;
     const params = [req.params.id];
+
     db.query(sql, params, (err, result) => {
         if (err) {
             res.statusMessage(400).sjon({ error: res.message });
@@ -81,7 +77,12 @@ app.delete('/api/candidate/:id', (req, res) => {
 
 // Creates one candidate
 app.post('/api/candidate', ({ body }, res) => {
-    const errors = inputCheck(body, 'first_name', 'last_name', 'industry_connected');
+    const errors = inputCheck(
+        body, 
+        'first_name', 
+        'last_name', 
+        'industry_connected'
+    );
     if (errors) {
         res.status(400).json({ error: errors });
         return;
@@ -101,7 +102,11 @@ app.post('/api/candidate', ({ body }, res) => {
     });
 });
 
+// Default response for any other request (Not Found)
+app.use((req, res) => {
+    res.status(404).end();
+});
+
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
-
