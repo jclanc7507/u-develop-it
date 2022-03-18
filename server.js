@@ -43,11 +43,11 @@ app.get('/api/candidates', (req, res) => {
 // Gets one candidates
 app.get('/api/candidates/:id', (req, res) => {
     const sql = `SELECT candidates.*, parties.name
-        AS party_name
-        FROM candidates
-        LEFT JOIN parties
-        ON candidates.party_id = parties.id 
-        WHERE candidates.id = ?`;
+                 AS party_name
+                 FROM candidates
+                 LEFT JOIN parties
+                 ON candidates.party_id = parties.id 
+                 WHERE candidates.id = ?`;
     const params = [req.params.id];
 
     db.query(sql, params, (err, row) => {
@@ -103,10 +103,12 @@ app.post('/api/candidate', ({ body }, res) => {
     db.query(sql, params, (err, result) => {
         if (err) {
             res.status(400).json({ error: err.message });
+            return;
         }
         res.json({
             message: 'success',
-            data: body
+            data: body,
+            changes: result.affectedRows
         });
     });
 });
@@ -146,7 +148,8 @@ app.get('/api/party/:id', (req, res) => {
 app.delete('/api/party/:id', (req, res) => {
     const sql = 'DELETE FROM parties WHERE id = ?';
     const params = [req.params.id];
-    db.query(sql, params, (err, results) => {
+
+    db.query(sql, params, (err, result) => {
         if (err) {
             res.status(400).json({ error: res.message });
             // checks if anything was deleted
@@ -171,6 +174,7 @@ app.put('/api/candidate/:id', (req, res) => {
         res.status(400).json({ error: errors });
         return;
     };
+
     const sql = `UPDATE candidates SET party_id = ?
         WHERE id = ?`;
     const params = [req.body.party_id, req.params.id];
@@ -198,6 +202,11 @@ app.use((req, res) => {
     res.status(404).end();
 });
 
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+// Start server after db connection
+db.connect(err => {
+    if (err) throw err;
+    console.log('Database connected.');
+    app.listen(PORT, () => {
+        console.log(`Server running on port ${PORT}`);
+    });
 });
